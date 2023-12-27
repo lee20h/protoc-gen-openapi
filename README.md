@@ -30,6 +30,10 @@ in a way that won't trip anyone up.
 * [Validation (protoc-gen-validate)](#validation)
 * [Google Field Behavior Annotations](#google-field-behavior-annotations)
 * [OAS3 header support](#oas3-header-support)
+* [Default Headers](#default-headers)
+* [Protobuf Version](#protobuf-version--multple-servers)
+* [Multiple Servers](#protobuf-version--multple-servers)
+* [Output Mode (merged/source_relative)](#output-mode--merged--sourcerelative-)
 
 ### Better Enum Support
 Enums work better by using string values of proto enums instead of ints.
@@ -153,3 +157,78 @@ Adding more can easily be done in the function `addValidationRules` in `/generat
 
 ### OAS3 header support
 
+### Default Headers
+
+```protobuf
+service LibraryService {
+
+  option (openapi.service_params) = {
+    headers: [
+      {
+        name:"Authorization",
+        pattern:"^(.*)$"
+        description:"This is authorization header"
+        required:true
+        default:{
+          string:"Bearer abc123"
+        }
+      },
+      {
+        name:"x-custom-default-header",
+        pattern:"^(.*)$"
+        description:"This is request protocol header"
+        required:true
+        default:{
+          string:"default_value"
+        }
+      }
+    ]
+  };
+}
+```
+
+output:
+
+```yaml
+            parameters:
+                - name: Authorization
+                  in: header
+                  description: This is authorization header
+                  required: true
+                  schema:
+                    pattern: ^(.*)$
+                    type: string
+                    default: Bearer abc123
+                - name: x-custom-default-header
+                  in: header
+                  description: This is request protocol header
+                  required: true
+                  schema:
+                    pattern: ^(.*)$
+                    type: string
+                    default: default_value
+```
+
+### Protobuf Version & Multple Servers
+
+```protobuf
+option (google.api.version) = "1.0.0";
+option (google.api.default_host) = "app.example.com";
+option (google.api.default_host) = "app2.example.com";
+```
+
+output:
+
+```yaml
+info:
+    version: 1.0.0
+servers:
+  - url: app.example.com
+  - url: app2.example.com
+```
+
+### Output Mode ( merged / source_relative )
+
+`protoc sample.proto -I. --openapi_out=output_mode=source_relative:.`
+
+Converts each protobuf file to an openAPI Spec file according to yaml/json format. In the case of `merged`, it combines the contents of all protobufs to convert them into a single openAPI Spec file

@@ -91,7 +91,7 @@ paths:
                   schema:
                     pattern: ^(.*)$
                     type: string
-                    default: http
+                    default: default_value
             requestBody:
                 content:
                     application/json:
