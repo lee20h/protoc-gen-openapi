@@ -4,7 +4,7 @@ package openapi;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/lee20h/protoc-gen-openapi/openapi;openapi";
+option go_package = "github.com/weltcorp/protoc-gen-openapi/openapi;openapi";
 
 // Add openAPI parameters to a method
 extend google.protobuf.MethodOptions {
@@ -18,24 +18,17 @@ extend google.protobuf.ServiceOptions {
 
 // Parameters at the file level are added to every method in every service in the file
 extend google.protobuf.FileOptions {
-    optional Parameters file_params = 66702;
+    optional Options file_params = 66702;
 }
-
 
 message Parameters {
     repeated Header headers = 1;
-    oneof oneof {
-      ServiceHeader service_params = 2;
-      MethodHeader method_params = 3;
-    }
 }
 
-message ServiceHeader {
-    repeated string servers = 1;
-}
-
-message MethodHeader {
-    repeated string servers = 1;
+message Options {
+    optional string version = 1;
+    repeated string servers = 2;
+    optional string authorizationDescribe = 3;
 }
 
 message Header {

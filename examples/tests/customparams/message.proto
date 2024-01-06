@@ -29,10 +29,14 @@ import "google/type/datetime.proto";
 
 option go_package = "github.com/google/gnostic/apps/protoc-gen-openapi/examples/tests/bodymapping/message/v1;message";
 
-option (google.api.version) = "1.0.0";
-option (google.api.default_host) = "123asdsad";
-option (google.api.default_host) = "asd";
-option (google.api.default_host) = "asdasd";
+option (openapi.file_params) = {
+    version: "1.1.0"
+    servers: [
+        "https://library-example.googleapis.com",
+        "https://library-example2.googleapis.com"
+    ],
+    authorizationDescribe: "dev: abc123 prod: adasd",
+};
 
 service Messaging {
     option (openapi.service_params) = {

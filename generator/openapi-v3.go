@@ -17,13 +17,13 @@ package generator
 
 import (
 	"fmt"
+	annotations "github.com/lee20h/protoc-gen-openapi/google/api"
 	"log"
 	"net/url"
 	"regexp"
 	"sort"
 	"strings"
 
-	"github.com/lee20h/protoc-gen-openapi/google/api"
 	statusPb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/proto"
@@ -50,7 +50,7 @@ type Configuration struct {
 }
 
 const (
-	infoURL = "https://github.com/lee20h/protoc-gen-openapi"
+	infoURL = "https://github.com/weltcorp"
 )
 
 // In order to dynamically add google.rpc.Status responses we need
@@ -115,7 +115,6 @@ func (g *OpenAPIv3Generator) buildDocumentV3() *v3.Document {
 			AdditionalProperties: []*v3.NamedSchemaOrReference{},
 		},
 	}
-
 	// Go through the files and add the services to the documents, keeping
 	// track of which schemas are referenced in the response so we can
 	// add them later.
@@ -129,23 +128,55 @@ func (g *OpenAPIv3Generator) buildDocumentV3() *v3.Document {
 			extTitle := file.Desc.Path()
 			d.Info.Title = extTitle
 
-			extHost := proto.GetExtension(file.Desc.Options(), annotations.E_DefaultHost).([]string)
+			openAPIOpts := proto.GetExtension(file.Desc.Options(), openapiExtensions.E_FileParams)
+			var options *openapiExtensions.Options
+			if openAPIOpts != nil && openAPIOpts != openapiExtensions.E_FileParams.InterfaceOf(openapiExtensions.E_FileParams.Zero()) {
+				options = openAPIOpts.(*openapiExtensions.Options)
 
-			if extHost != nil {
-				for _, host := range extHost {
-					hostURL, err := url.Parse(host)
-					if err == nil {
-						hostURL.Scheme = "https"
-						d.Servers = append(d.Servers, &v3.Server{Url: hostURL.String()})
+				servers := options.GetServers()
+				if servers != nil {
+					for _, server := range servers {
+						serverURL, err := url.Parse(server)
+						if err == nil {
+							serverURL.Scheme = "https"
+							d.Servers = append(d.Servers, &v3.Server{Url: serverURL.String()})
+						}
 					}
 				}
-			}
 
-			version := proto.GetExtension(file.Desc.Options(), annotations.E_Version).(string)
-			if version != "" {
-				d.Info.Version = version
-			}
+				version := options.GetVersion()
+				if version != "" {
+					d.Info.Version = version
+				}
 
+				authDescription := options.GetAuthorizationDescribe()
+				if authDescription != "" {
+					d.Components.SecuritySchemes = &v3.SecuritySchemesOrReferences{
+						AdditionalProperties: []*v3.NamedSecuritySchemeOrReference{},
+					}
+					d.Components.SecuritySchemes.AdditionalProperties = append(d.Components.SecuritySchemes.AdditionalProperties, &v3.NamedSecuritySchemeOrReference{
+						Name: "Bearer",
+						Value: &v3.SecuritySchemeOrReference{
+							Oneof: &v3.SecuritySchemeOrReference_SecurityScheme{
+								SecurityScheme: &v3.SecurityScheme{
+									Description: authDescription,
+									Type:        "http",
+									Scheme:      "bearer",
+								},
+							},
+						},
+					})
+					d.Security = append(d.Security, &v3.SecurityRequirement{
+						AdditionalProperties: []*v3.NamedStringArray{},
+					})
+					d.Security[0].AdditionalProperties = append(d.Security[0].AdditionalProperties, &v3.NamedStringArray{
+						Name: "Bearer",
+						Value: &v3.StringArray{
+							Value: []string{},
+						},
+					})
+				}
+			}
 			g.addPathsToDocumentV3(d, file.Services)
 		}
 	}

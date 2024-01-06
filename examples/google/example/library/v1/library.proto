@@ -33,9 +33,14 @@ option java_multiple_files = true;
 option java_outer_classname = "LibraryProto";
 option java_package = "com.google.example.library.v1";
 
-option (google.api.default_host) = "library-example.googleapis.com";
-option (google.api.default_host) = "library-example2.googleapis.com";
-option (google.api.version) = "1.1.0";
+option (openapi.file_params) = {
+  version: "1.1.0"
+  servers: [
+    "https://library-example.googleapis.com",
+    "https://library-example2.googleapis.com"
+  ],
+  authorizationDescribe: "Authorizaiton Annotation",
+};
 
 
 // This API represents a simple digital library.  It lets you manage Shelf
